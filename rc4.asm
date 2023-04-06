@@ -71,7 +71,7 @@ section .text
 		lea rsi, [iv]
 ._6:	mov rbx, [rsi + rax]		  ; 256 / 4 == 64, faster way (using 64 bit register) to xor all the key with iv than character (8 bit register) by character
 		xor [rdi + rax], rbx
-		add al, 4
+		add al, 8
 		test al, al
 		jne ._6
 		ret

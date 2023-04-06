@@ -1,18 +1,18 @@
-;    This file implements RC4 in ASM.
-;    Copyright (C) 2023  Maurice Lambert
+;	This file implements RC4 in ASM.
+;	Copyright (C) 2023  Maurice Lambert
 
-;    This program is free software: you can redistribute it and/or modify
-;    it under the terms of the GNU General Public License as published by
-;    the Free Software Foundation, either version 3 of the License, or
-;    (at your option) any later version.
+;	This program is free software: you can redistribute it and/or modify
+;	it under the terms of the GNU General Public License as published by
+;	the Free Software Foundation, either version 3 of the License, or
+;	(at your option) any later version.
 
-;    This program is distributed in the hope that it will be useful,
-;    but WITHOUT ANY WARRANTY; without even the implied warranty of
-;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;    GNU General Public License for more details.
+;	This program is distributed in the hope that it will be useful,
+;	but WITHOUT ANY WARRANTY; without even the implied warranty of
+;	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;	GNU General Public License for more details.
 
-;    You should have received a copy of the GNU General Public License
-;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+;	You should have received a copy of the GNU General Public License
+;	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 global arc4, generate_iv, generate_key, xor_key_iv
 global key, iv
@@ -22,31 +22,35 @@ default rel
 section .text
 
 	arc4:
-		xor rdx, rdx                  ; dl = index1 = 0
-		xor rcx, rcx                  ; cl = index2 = 0
-._4:		mov al, byte [rdi]
+		xor rdx, rdx				  ; dl = index1 = 0
+		xor rcx, rcx				  ; cl = index2 = 0
+		xor rax, rax
+		xor rbx, rbx
+		lea rsi, [key]
+._4:	mov al, byte [rdi]
 		test al, al
-		jne ._3                       ; if character == 0 (end of string) return else crypt character
+		jne ._3						  ; if character == 0 (end of string) return else crypt character
 		ret
-._3:            add dl, 1
-		add cl, byte [key + edx]
-		mov al, byte [key + edx]
-		mov bl, byte [key + ecx]
-		mov byte [key + edx], bl
-		mov byte [key + ecx], al      ; value1, value2 = value2, value1
+._3:	add dl, 1
+		add cl, byte [rsi + rdx]
+		mov al, byte [rsi + rdx]
+		mov bl, byte [rsi + rcx]
+		mov byte [rsi + rdx], bl
+		mov byte [rsi + rcx], al	  ; value1, value2 = value2, value1
 		add al, bl
-		mov al, byte [key + eax]
-		xor [rsi], al
-		add rsi, 1                    ; next character
+		mov al, byte [rsi + rax]
+		xor [rdi], al
+		add rdi, 1					  ; next character
 		jmp ._4
 
 	generate_iv:
 		mov rax, 228
 		lea rdi, [rbp-16]
 		mov rdi, 1
+		lea rsi, [iv]
 		syscall
 		mov rcx, 64
-._5:		mov rax, qword [rbp-8]
+._5:	mov rax, qword [rbp-8]
 		mov rbx, rax
 		shl rax, 13
 		xor rax, rbx
@@ -56,40 +60,44 @@ section .text
 		mov rbx, rax
 		shl rax, 17
 		xor rax, rbx
-		mov [iv + rcx * 4 - 4], rax
+		mov [rsi + rcx * 4 - 4], rax
 		sub rcx, 1
 		test rcx, rcx
 		jne ._5
-		mov byte [iv + 256], 0
+		mov byte [rsi + 256], 0
 		ret
 
 	xor_key_iv:
 		xor rax, rax
-._6:		mov rbx, [iv + eax]
-		xor [key + eax], rbx
-		add al, 1
+		lea rdi, [key]
+		lea rsi, [iv]
+._6:	mov rbx, [rsi + rax]		  ; 256 / 4 == 64, faster way (using 64 bit register) to xor all the key with iv than character (8 bit register) by character
+		xor [rdi + rax], rbx
+		add al, 4
 		test al, al
 		jne ._6
 		ret
 
 	generate_key:
-		mov rsi, rdi                  ; save first argument (string) address
-		xor rdx, rdx                  ; dl = index1 = 0
-		xor rax, rax                  ; al = i = 0
-._2:		add dl, byte [key + eax]
+		mov rsi, rdi				  ; save first argument (string) address
+		xor rdx, rdx				  ; dl = index1 = 0
+		xor rax, rax				  ; al = i = 0
+		xor rbx, rbx
+		lea rcx, [key]
+._2:	add dl, byte [rcx + rax]
 		mov bl, byte [rdi]
-		test bl, bl                   ; test character is not 0 (end of string)
+		test bl, bl					  ; test character is not 0 (end of string)
 		jne ._1
-		mov rdi, rsi                  ; if character is 0 (end of string) got to the first character of the string
-._1:		add dl, byte [rdi]
-		add rdi, 1                    ; next character
-		mov bl, byte [key + edx]
-		mov bh, byte [key + eax]
-		mov [key + eax], bl
-		mov [key + edx], bh           ; value1, value2 = value2, value1
+		mov rdi, rsi				  ; if character is 0 (end of string) got to the first character of the string
+._1:	add dl, byte [rdi]
+		add rdi, 1					  ; next character
+		mov bl, byte [rcx + rdx]
+		mov bh, byte [rcx + rax]
+		mov [rcx + rax], bl
+		mov [rcx + rdx], bh			  ; value1, value2 = value2, value1
 		add al, 1
 		test al, al
-		jne ._2                       ; loop 256 times
+		jne ._2						  ; loop 256 times
 		ret
 
 section .data

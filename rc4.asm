@@ -45,8 +45,6 @@ section .text
 
 	generate_iv:
 		mov rax, 228
-		lea rdi, [rbp-16]
-		mov rdi, 1
 		lea rsi, [iv]
 		syscall
 		mov rcx, 64

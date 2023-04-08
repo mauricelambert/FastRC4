@@ -172,7 +172,7 @@ section .text
         ret
 
     decrypt:
-        mov r11, rdx
+        mov r11, rcx
         mov r8, rsi
         mov r9, rdx
         call generate_key

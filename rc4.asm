@@ -157,7 +157,7 @@ section .text
         ret
 
     encrypt:
-        mov r11, rsi
+        mov r11, rdx
         mov r8, rsi
         call generate_key
         call generate_iv

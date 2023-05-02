@@ -1,3 +1,5 @@
+// Compilation: gcc test.c ARC4.o
+
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -51,7 +51,7 @@ section .text
         mov byte [rsi + rcx], al      ; value1, value2 = value2, value1
         add al, bl
         mov al, byte [rsi + rax]
-        xor [rdi], al
+        xor byte [rdi], al
         add rdi, 1                    ; next character
         jmp ._4
 
@@ -73,7 +73,7 @@ section .text
         mov byte [rsi + rcx], al      ; value1, value2 = value2, value1
         add al, bl
         mov al, byte [rsi + rax]
-        xor [rdi], al
+        xor byte [rdi], al
         add rdi, 1                    ; next character
         jmp ._11
 

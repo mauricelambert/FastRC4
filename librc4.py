@@ -86,7 +86,7 @@ class RC4:
         self.arc4.xor_key_iv()
         cipher = c_char_p(data)
         self.arc4.arc4(cipher, c_ulonglong(data_length))
-        return data_length.to_bytes(8, 'big') + iv + cipher._objects # self._read_all_buffer(cipher, data_length)
+        return data_length.to_bytes(8, 'big') + iv + cipher._objects[:data_length] # self._read_all_buffer(cipher, data_length)
 
     def decrypt(self, data: bytes, safe: bool = True) -> bytes:
 
@@ -107,7 +107,7 @@ class RC4:
         self.arc4.xor_key_iv()
         data = c_char_p(cipher + b'\0')
         self.arc4.arc4(data, c_ulonglong(cipher_length))
-        return data._objects # self._read_all_buffer(data, cipher_length)
+        return data._objects[:cipher_length] # self._read_all_buffer(data, cipher_length)
 
     def default_encrypt(self, data: bytes, length: int = 0) -> bytes:
 
@@ -119,7 +119,7 @@ class RC4:
 
         cipher = c_char_p(data + b'\0')
         self.arc4.encrypt(c_char_p(self.key), cipher, c_ulonglong(length))
-        return cipher._objects # self._read_all_buffer(cipher, len(data))
+        return cipher._objects[:length if length else len(data)] # self._read_all_buffer(cipher, len(data))
 
     def default_decrypt(self, iv: bytes, cipher: bytes, length: int) -> bytes:
 
@@ -129,7 +129,7 @@ class RC4:
 
         data = c_char_p(cipher + b'\0')
         self.arc4.decrypt(c_char_p(self.key), c_char_p(iv), data, c_ulonglong(length))
-        return data._objects # self._read_all_buffer(data, len(cipher))
+        return data._objects[:length] # self._read_all_buffer(data, len(cipher))
 
     def default_arc4_null_byte(self, data: bytes) -> bytes:
 
@@ -139,7 +139,7 @@ class RC4:
 
         cipher = c_char_p(data + b'\0')
         self.arc4.arc4_null_byte(cipher)
-        return cipher._objects # self._read_all_buffer(cipher, len(data))
+        return cipher._objects[:len(data)] # self._read_all_buffer(cipher, len(data))
 
     def default_arc4(self, data: bytes, length: int = None) -> bytes:
 
@@ -152,7 +152,7 @@ class RC4:
         length = len(data) if length is None else length
         cipher = c_char_p(data + b'\0')
         self.arc4.arc4(cipher, c_ulonglong(length))
-        return cipher._objects # self._read_all_buffer(cipher, length)
+        return cipher._objects[:length] # self._read_all_buffer(cipher, length)
 
     def default_generate_key(self) -> None:
 

@@ -32,7 +32,7 @@ int main() {
         puts("Key ciphered by IV");
         arc4(data2, length);
         puts("Cipher");
-        for (int i = 0; i < 63; i++) printf("%02x", data[i]);
+        for (int i = 0; i < 63; i++) printf("%02x", data2[i]);
         puts("");
         char *iv = get_iv();
         reset_key();
@@ -40,6 +40,18 @@ int main() {
         set_iv(iv);
         xor_key_iv();
         arc4(data2, 62);
+        puts(data2);
+
+        ///
+        // Test2
+        ///
+        reset_key();
+        encrypt(key, data2, length);
+        for (int i = 0; i < 63; i++) printf("%02x", data2[i]);
+        puts("");
+        iv = get_iv();
+        reset_key();
+        decrypt(key, iv, data2, length);
         puts(data2);
         return 0;
 }

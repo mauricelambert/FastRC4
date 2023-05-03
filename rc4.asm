@@ -157,18 +157,18 @@ section .text
         ret
 
     encrypt:
-        mov r11, rdx
-        mov r8, rsi
+        push rdx                      ; syscall in generate_iv use registers like r11
+        push rsi
         call generate_key
         call generate_iv
         call xor_key_iv
-        mov rdi, r8
-        test r11, r11
+        pop rdi
+        pop rsi
+        test rsi, rsi
         jne ._12
         call arc4_null_byte
         ret
-._12:   mov rsi, r11
-        call arc4
+._12:   call arc4
         ret
 
     decrypt:

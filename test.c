@@ -24,13 +24,17 @@ int main() {
         for (int i = 0; i < 63; i++) data2[i] = data[i];
         unsigned long long length = 62;
         puts(data);
+
+        ///
+        // Test1
+        ///
         generate_iv();
         puts("IV generated");
         generate_key(key);
         puts("Key generated");
         xor_key_iv();
         puts("Key ciphered by IV");
-        arc4(data2, length);
+        arc4_null_byte(data2);
         puts("Cipher");
         for (int i = 0; i < 63; i++) printf("%02x", data2[i]);
         puts("");
@@ -43,10 +47,23 @@ int main() {
         puts(data2);
 
         ///
-        // Test2
+        // Test2.1
         ///
         reset_key();
         encrypt(key, data2, length);
+        for (int i = 0; i < 63; i++) printf("%02x", data2[i]);
+        puts("");
+        iv = get_iv();
+        reset_key();
+        decrypt(key, iv, data2, length);
+        puts(data2);
+
+        ///
+        // Test2.2
+        ///
+        reset_key();
+        unsigned long long null_length = 0;
+        encrypt(key, data2, null_length);
         for (int i = 0; i < 63; i++) printf("%02x", data2[i]);
         puts("");
         iv = get_iv();

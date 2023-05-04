@@ -78,12 +78,13 @@ section .text
         jmp ._11
 
     generate_iv:
-        mov rax, 228
+        mov rax, 228                  ; syscall 228 == sys_clock_gettime
+        xor rdi, rdi                  ; 0 == CLOCK_REALTIME
         lea rsi, [iv]
         syscall
         mov rcx, 64
-._5:    mov rax, qword [rbp-8]
-        mov rbx, rax
+        mov rax, qword [rbp-8]        ; Nanosecond (pseudo random start number)
+._5:    mov rbx, rax
         shl rax, 13
         xor rax, rbx
         mov rbx, rax
@@ -96,7 +97,7 @@ section .text
         sub rcx, 1
         test rcx, rcx
         jne ._5
-        mov byte [rsi + 256], 0
+        mov byte [rsi + 256], 0       ; end with null byte (257 characters = 256 characters + null byte)
         ret
 
     xor_key_iv:
@@ -153,7 +154,7 @@ section .text
         add rax, 4
         test al, al
         jne ._8
-        mov byte [rsi + 256], al
+        mov byte [rsi + 256], al      ; end with null byte (257 characters = 256 characters + null byte)
         ret
 
     encrypt:
@@ -189,4 +190,3 @@ section .data
 
 section .bss
     iv resb 257
-

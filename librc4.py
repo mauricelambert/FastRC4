@@ -236,9 +236,12 @@ def tests():
     rc4.default_reset_key()
 
     ##############################
-    #  TEST 3: Default encryption
+    #  TEST 3.1: Default encryption
     ##############################
     # Problem: don't work after test 2 but working good if i don't run the test 2
+
+    key = b'This is my secret key !'
+    data = b'This is my secret data ! ' + hexlify(bytes(range(256)))
 
     rc4 = RC4(key)
 
@@ -254,10 +257,13 @@ def tests():
     print("reset key")
     rc4.default_reset_key()
 
-    ################################
-    #  TEST 4.1: Low level encryption
-    ################################
-    # Problem: don't work after another encryption but working good if is the first encryption
+    ##############################
+    #  TEST 3.2: Default encryption
+    ##############################
+    # Problem: don't work after test 2 but working good if i don't run the test 2
+
+    key = b'This is my secret key !'
+    data = b'This is my secret data ! ' + hexlify(bytes(range(256)))
 
     rc4 = RC4(key)
 
@@ -274,9 +280,12 @@ def tests():
     rc4.default_reset_key()
 
     ################################
-    #  TEST 4.2: Low level encryption
+    #  TEST 4: Low level encryption
     ################################
     # Problem: don't work after another encryption but working good if is the first encryption
+
+    key = b'This is my secret key !'
+    data = b'This is my secret data ! ' + hexlify(bytes(range(256)))
 
     rc4 = RC4(key)
 

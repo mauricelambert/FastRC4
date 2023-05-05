@@ -83,7 +83,7 @@ section .text
         lea rsi, [iv]
         syscall
         mov rcx, 64
-        mov rax, qword [rbp-8]        ; Nanosecond (pseudo random start number)
+        mov rax, qword [rsi + 8]      ; Nanosecond (pseudo random start number)
 ._5:    mov rbx, rax
         shl rax, 13
         xor rax, rbx

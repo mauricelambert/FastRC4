@@ -211,7 +211,7 @@ def tests():
     analyzer = DataAnalysis(data)
     analyze = list(analyzer.keys_frequences())
     analyzer.statistictypes_printer(analyze)
-    # analyzer.statistictypes_chart(analyze)
+    analyzer.statistictypes_chart(analyze)
 
     from binascii import hexlify
     key = b'This is my secret key !'

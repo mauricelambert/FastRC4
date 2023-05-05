@@ -211,6 +211,8 @@ def tests():
     analyzer = DataAnalysis(data)
     analyze = list(analyzer.keys_frequences())
     analyzer.statistictypes_printer(analyze)
+    print("Max:", max(analyze, key=lambda x: x.value))
+    print("Min:", min(analyze, key=lambda x: x.value))
     analyzer.statistictypes_chart(analyze)
 
     from binascii import hexlify

@@ -13,10 +13,20 @@ This repository implements RC4 encryption with IV, written in ASM with few optim
 
 ## Compilation
 
+### Linux
+
 ```bash
 nasm -felf64 ARC4.asm
 ld -shared ARC4.o -o librc4.so
 strip librc4.so
+```
+
+### Windows
+
+```bash
+nasm -fwin64 rc4_win.asm
+gcc -shared rc4_win.obj -o librc4.dll
+strip librc4.dll
 ```
 
 ## Usages

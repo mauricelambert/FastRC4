@@ -43,7 +43,7 @@ int main() {
         generate_key(key);
         set_iv(iv);
         xor_key_iv();
-        arc4(data2, 62);
+        arc4(data2, length);
         puts(data2);
 
         ///

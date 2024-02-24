@@ -1,6 +1,7 @@
 # FastRC4 - LibARC4
 
 > **This RC4 implementation is not secure, it is a POC for an optimized RC4 implementation in ASM. You should never use this implementation for TLS, WEP, ... or other old protocols using RC4. You should never use it to encrypt secrets or very large file.**
+>> The RC4 algorithm validity is checked with lddgo.net API to be sure is correct.
 
 ## Description
 

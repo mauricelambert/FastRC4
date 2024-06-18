@@ -1,5 +1,5 @@
 ;    This file implements RC4 in ASM.
-;    Copyright (C) 2023  Maurice Lambert
+;    Copyright (C) 2023, 2024  Maurice Lambert
 
 ;    This program is free software: you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -13,6 +13,12 @@
 
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+; nasm -fwin64 rc4_win.asm
+; gcc.exe -shared rc4_win.obj -o librc4.dll
+
+; "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+; cl XXXX.c rc4_win.obj
 
 ; arc4_null_byte([IN/OUT] char *data) -> NULL
 ; arc4([IN/OUT] char *data, [IN] unsigned long long length) -> NULL
@@ -32,51 +38,51 @@ default rel
 section .text
 
     arc4:
-        mov rdi, rcx                  ; data
+        mov r8, rcx                   ; data
         mov r10, rdx                  ; length
         xor rdx, rdx                  ; dl = index1 = 0
         xor rcx, rcx                  ; cl = index2 = 0
         xor rax, rax
-        xor rbx, rbx
-        lea rsi, [key]
+        xor r11, r11
+        lea r9, [key]
 ._4:    test r10, r10                 ; if length == 0: return;
         jne ._3
         ret
-._3:    mov al, byte [rdi]
-        sub r10, 1                    ; length -= 1;
-        add dl, 1
-        add cl, byte [rsi + rdx]
-        mov al, byte [rsi + rdx]
-        mov bl, byte [rsi + rcx]
-        mov byte [rsi + rdx], bl
-        mov byte [rsi + rcx], al      ; value1, value2 = value2, value1
-        add al, bl
-        mov al, byte [rsi + rax]
-        xor byte [rdi], al
-        add rdi, 1                    ; next character
+._3:    mov al, byte [r8]
+        dec r10                       ; length -= 1;
+        inc dl
+        add cl, byte [r9 + rdx]
+        mov al, byte [r9 + rdx]
+        mov r11b, byte [r9 + rcx]
+        mov byte [r9 + rdx], r11b
+        mov byte [r9 + rcx], al       ; value1, value2 = value2, value1
+        add al, r11b
+        mov al, byte [r9 + rax]
+        xor byte [r8], al
+        inc r8                        ; next character
         jmp ._4
 
     arc4_null_byte:
-        mov rdi, rcx                  ; data
+        mov r8, rcx                   ; data
         xor rdx, rdx                  ; dl = index1 = 0
         xor rcx, rcx                  ; cl = index2 = 0
         xor rax, rax
-        xor rbx, rbx
-        lea rsi, [key]
-._11:   mov al, byte [rdi]
+        xor r11, r11
+        lea r9, [key]
+._11:   mov al, byte [r8]
         test al, al
-        jne ._10                       ; if character == 0 (end of string) return else crypt character
+        jne ._10                      ; if character == 0 (end of string) return else crypt character
         ret
-._10:   add dl, 1
-        add cl, byte [rsi + rdx]
-        mov al, byte [rsi + rdx]
-        mov bl, byte [rsi + rcx]
-        mov byte [rsi + rdx], bl
-        mov byte [rsi + rcx], al      ; value1, value2 = value2, value1
-        add al, bl
-        mov al, byte [rsi + rax]
-        xor byte [rdi], al
-        add rdi, 1                    ; next character
+._10:   inc dl
+        add cl, byte [r9 + rdx]
+        mov al, byte [r9 + rdx]
+        mov r11b, byte [r9 + rcx]
+        mov byte [r9 + rdx], r11b
+        mov byte [r9 + rcx], al       ; value1, value2 = value2, value1
+        add al, r11b
+        mov al, byte [r9 + rax]
+        xor byte [r8], al
+        inc r8                        ; next character
         jmp ._11
 
     generate_iv:
@@ -92,17 +98,17 @@ section .text
         lea r10, [iv]
         mov rcx, 64
         mov rax, qword [r10]          ; Last bytes for nanosecond and last bytes for PerformanceCounter are used to initialize random value for IV
-._5:    mov rbx, rax
+._5:    mov r11, rax
         shl rax, 13
-        xor rax, rbx
-        mov rbx, rax
+        xor rax, r11
+        mov r11, rax
         shr rax, 7
-        xor rax, rbx
-        mov rbx, rax
+        xor rax, r11
+        mov r11, rax
         shl rax, 17
-        xor rax, rbx
+        xor rax, r11
         mov [r10 + rcx * 4 - 4], rax
-        sub rcx, 1
+        dec rcx
         test rcx, rcx
         jne ._5
         mov byte [r10 + 256], 0       ; end with null byte (257 characters = 256 characters + null byte)
@@ -110,43 +116,43 @@ section .text
 
     xor_key_iv:
         xor rax, rax
-        lea rdi, [key]
-        lea rsi, [iv]
-._6:    mov rbx, [rsi + rax]          ; 256 / 4 == 64, faster way (using 64 bit register) to xor all the key with iv than character (8 bit register) by character
-        xor [rdi + rax], rbx
+        lea r8, [key]
+        lea r9, [iv]
+._6:    mov r11, [r9 + rax]           ; 256 / 4 == 64, faster way (using 64 bit register) to xor all the key with iv than character (8 bit register) by character
+        xor [r8 + rax], r11
         add al, 8
         test al, al
         jne ._6
         ret
 
     generate_key:
-        mov rdi, rcx
-        mov rsi, rdi                  ; save first argument (string) address
+        mov r8, rcx
+        mov r9, r8                    ; save first argument (string) address
         xor rdx, rdx                  ; dl = index1 = 0
         xor rax, rax                  ; al = i = 0
-        xor rbx, rbx
-        lea rcx, [key]
-._2:    add dl, byte [rcx + rax]
-        mov bl, byte [rdi]
-        test bl, bl                   ; test character is not 0 (end of string)
+        xor rcx, rcx
+        lea r11, [key]
+._2:    add dl, byte [r11 + rax]
+        mov cl, byte [r8]
+        test cl, cl                   ; test character is not 0 (end of string)
         jne ._1
-        mov rdi, rsi                  ; if character is 0 (end of string) got to the first character of the string
-._1:    add dl, byte [rdi]
-        add rdi, 1                    ; next character
-        mov bl, byte [rcx + rdx]
-        mov bh, byte [rcx + rax]
-        mov [rcx + rax], bl
-        mov [rcx + rdx], bh           ; value1, value2 = value2, value1
-        add al, 1
+        mov r8, r9                    ; if character is 0 (end of string) got to the first character of the string
+._1:    add dl, byte [r8]
+        inc r8                        ; next character
+        mov cl, byte [r11 + rdx]
+        mov r10b, byte [r11 + rax]
+        mov byte [r11 + rax], cl
+        mov byte [r11 + rdx], r10b    ; value1, value2 = value2, value1
+        inc al
         test al, al
         jne ._2                       ; loop 256 times
         ret
 
     reset_key:
         xor rax, rax
-        lea rdi, [key]
-._7:    mov byte [rdi + rax], al
-        add rax, 1
+        lea r8, [key]
+._7:    mov byte [r8 + rax], al
+        inc rax
         test al, al
         jne ._7
         ret
@@ -156,18 +162,18 @@ section .text
         ret
 
     set_iv:
-        lea rsi, [iv]
+        lea r9, [iv]
         xor rax, rax
-._8:    mov rbx, [rcx + rax]
-        mov [rsi + rax], rbx
+._8:    mov r11, [rcx + rax]
+        mov [r9 + rax], r11
         add rax, 4
         test al, al
         jne ._8
-        mov byte [rsi + 256], al      ; end with null byte (257 characters = 256 characters + null byte)
+        mov byte [r9 + 256], al       ; end with null byte (257 characters = 256 characters + null byte)
         ret
 
     encrypt:
-        push r8                       ; syscall in generate_iv use registers like r11
+        push r8
         push rdx
         call generate_key
         call generate_iv
@@ -182,15 +188,15 @@ section .text
         ret
 
     decrypt:
-        mov r11, r9
-        mov r12, rdx
-        mov r13, r8
+        push r9
+        push r8
+        push rdx
         call generate_key
-        mov rcx, r12
+        pop rcx
         call set_iv
         call xor_key_iv
-        mov rcx, r13
-        mov rdx, r11
+        pop rcx
+        pop rdx
         call arc4
         ret
 

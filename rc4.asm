@@ -1,5 +1,5 @@
 ;    This file implements RC4 in ASM.
-;    Copyright (C) 2023  Maurice Lambert
+;    Copyright (C) 2023, 2024  Maurice Lambert
 
 ;    This program is free software: you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -13,6 +13,10 @@
 
 ;    You should have received a copy of the GNU General Public License
 ;    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+; nasm -f elf64 rc4.asm
+; gcc XXXXXXX.c rc4.o
+; gcc -shared   rc4.o -o librc4.so
 
 ; arc4_null_byte([IN/OUT] char *data) -> NULL
 ; arc4([IN/OUT] char *data, [IN] unsigned long long length) -> NULL
@@ -36,45 +40,45 @@ section .text
         xor rdx, rdx                  ; dl = index1 = 0
         xor rcx, rcx                  ; cl = index2 = 0
         xor rax, rax
-        xor rbx, rbx
+        xor r11, r11
         lea rsi, [key]
 ._4:    test r10, r10                 ; if length == 0: return;
         jne ._3
         ret
 ._3:    mov al, byte [rdi]
-        sub r10, 1                    ; length -= 1;
-        add dl, 1
+        dec r10                       ; length -= 1;
+        inc dl
         add cl, byte [rsi + rdx]
         mov al, byte [rsi + rdx]
-        mov bl, byte [rsi + rcx]
-        mov byte [rsi + rdx], bl
+        mov r11b, byte [rsi + rcx]
+        mov byte [rsi + rdx], r11b
         mov byte [rsi + rcx], al      ; value1, value2 = value2, value1
-        add al, bl
+        add al, r11b
         mov al, byte [rsi + rax]
         xor byte [rdi], al
-        add rdi, 1                    ; next character
+        inc rdi                       ; next character
         jmp ._4
 
     arc4_null_byte:
         xor rdx, rdx                  ; dl = index1 = 0
         xor rcx, rcx                  ; cl = index2 = 0
         xor rax, rax
-        xor rbx, rbx
+        xor r11, r11
         lea rsi, [key]
 ._11:   mov al, byte [rdi]
         test al, al
-        jne ._10                       ; if character == 0 (end of string) return else crypt character
+        jne ._10                      ; if character == 0 (end of string) return else crypt character
         ret
-._10:   add dl, 1
+._10:   inc dl
         add cl, byte [rsi + rdx]
         mov al, byte [rsi + rdx]
-        mov bl, byte [rsi + rcx]
-        mov byte [rsi + rdx], bl
+        mov r11b, byte [rsi + rcx]
+        mov byte [rsi + rdx], r11b
         mov byte [rsi + rcx], al      ; value1, value2 = value2, value1
-        add al, bl
+        add al, r11b
         mov al, byte [rsi + rax]
         xor byte [rdi], al
-        add rdi, 1                    ; next character
+        inc rdi                       ; next character
         jmp ._11
 
     generate_iv:
@@ -84,17 +88,17 @@ section .text
         syscall
         mov rcx, 64
         mov rax, qword [rsi + 8]      ; Nanosecond (pseudo random start number)
-._5:    mov rbx, rax
+._5:    mov r11, rax
         shl rax, 13
-        xor rax, rbx
-        mov rbx, rax
+        xor rax, r11
+        mov r11, rax
         shr rax, 7
-        xor rax, rbx
-        mov rbx, rax
+        xor rax, r11
+        mov r11, rax
         shl rax, 17
-        xor rax, rbx
+        xor rax, r11
         mov [rsi + rcx * 4 - 4], rax
-        sub rcx, 1
+        dec rcx
         test rcx, rcx
         jne ._5
         mov byte [rsi + 256], 0       ; end with null byte (257 characters = 256 characters + null byte)
@@ -104,31 +108,31 @@ section .text
         xor rax, rax
         lea rdi, [key]
         lea rsi, [iv]
-._6:    mov rbx, [rsi + rax]          ; 256 / 4 == 64, faster way (using 64 bit register) to xor all the key with iv than character (8 bit register) by character
-        xor [rdi + rax], rbx
+._6:    mov r11, [rsi + rax]          ; 256 / 4 == 64, faster way (using 64 bit register) to xor all the key with iv than character (8 bit register) by character
+        xor [rdi + rax], r11
         add al, 8
         test al, al
         jne ._6
         ret
 
     generate_key:
-        mov rsi, rdi                  ; save first argument (string) address
+        mov r11, rdi                  ; save first argument (string) address
         xor rdx, rdx                  ; dl = index1 = 0
         xor rax, rax                  ; al = i = 0
-        xor rbx, rbx
-        lea rcx, [key]
-._2:    add dl, byte [rcx + rax]
-        mov bl, byte [rdi]
-        test bl, bl                   ; test character is not 0 (end of string)
+        xor rcx, rcx
+        lea rsi, [key]
+._2:    add dl, byte [rsi + rax]
+        mov cl, byte [rdi]
+        test cl, cl                   ; test character is not 0 (end of string)
         jne ._1
-        mov rdi, rsi                  ; if character is 0 (end of string) got to the first character of the string
+        mov rdi, r11                  ; if character is 0 (end of string) got to the first character of the string
 ._1:    add dl, byte [rdi]
-        add rdi, 1                    ; next character
-        mov bl, byte [rcx + rdx]
-        mov bh, byte [rcx + rax]
-        mov [rcx + rax], bl
-        mov [rcx + rdx], bh           ; value1, value2 = value2, value1
-        add al, 1
+        inc rdi                       ; next character
+        mov cl, byte [rsi + rdx]
+        mov ch, byte [rsi + rax]
+        mov byte [rsi + rax], cl
+        mov byte [rsi + rdx], ch      ; value1, value2 = value2, value1
+        inc al
         test al, al
         jne ._2                       ; loop 256 times
         ret
@@ -137,7 +141,7 @@ section .text
         xor rax, rax
         lea rdi, [key]
 ._7:    mov byte [rdi + rax], al
-        add rax, 1
+        inc rax
         test al, al
         jne ._7
         ret
@@ -149,8 +153,8 @@ section .text
     set_iv:
         lea rsi, [iv]
         xor rax, rax
-._8:    mov rbx, [rdi + rax]
-        mov [rsi + rax], rbx
+._8:    mov r11, [rdi + rax]
+        mov [rsi + rax], r11
         add rax, 4
         test al, al
         jne ._8
@@ -158,7 +162,7 @@ section .text
         ret
 
     encrypt:
-        push rdx                      ; syscall in generate_iv use registers like r11
+        push rdx
         push rsi
         call generate_key
         call generate_iv
@@ -173,7 +177,7 @@ section .text
         ret
 
     decrypt:
-        mov r11, rcx
+        mov r10, rcx
         mov r8, rsi
         mov r9, rdx
         call generate_key
@@ -181,7 +185,7 @@ section .text
         call set_iv
         call xor_key_iv
         mov rdi, r9
-        mov rsi, r11
+        mov rsi, r10
         call arc4
         ret
 
